@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
 import java.util.Map;
 
 public class SingleServer {
@@ -63,7 +62,7 @@ public class SingleServer {
                     if (userDTO.user.equals(loginData.email)) {
                         if (userDTO.password.equals(loginData.password)) {
                             httpWorker.Response(exchange, 200,
-                                    Map.of("message", "Seja bem-vindo, " + userDTO.name + "!"));
+                                    Map.of("success", userDTO));
 
                             return;
                         } else {
