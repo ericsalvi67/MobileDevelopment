@@ -12,12 +12,10 @@ public class SingleServer {
     private static final int PORT = 8080;
     private static final httpWorker httpWorker = new httpWorker();
 
-    private static HashMap<String, String> users = new HashMap<>() {
-        {
-            put("admin", "admin");
-            put("eric.salvi", "teste123");
-            put("univates.teste", "univates2026");
-        }
+    private static UserDTO[] users = new UserDTO[] {
+            new UserDTO("admin", "admin", "Administrador", "Rua Principal, 123"),
+            new UserDTO("eric.salvi", "teste123", "Eric Salvi", "Rua Secundária, 456"),
+            new UserDTO("univates.teste", "univates2026", "Univates Teste", "Av. Principal, 789")
     };
 
     public static void main(String[] args) {
@@ -61,18 +59,24 @@ public class SingleServer {
                     return;
                 }
 
-                if (!users.containsKey(loginData.email)) {
-                    httpWorker.Response(exchange, 404, Map.of("error", "User not found"));
-                    return;
-                }
+                for (UserDTO userDTO : users) {
+                    if (userDTO.user.equals(loginData.email)) {
+                        if (userDTO.password.equals(loginData.password)) {
+                            httpWorker.Response(exchange, 200,
+                                    Map.of("message", "Seja bem-vindo, " + userDTO.name + "!"));
 
-                if (!users.get(loginData.email).equals(loginData.password)) {
-                    httpWorker.Response(exchange, 401, Map.of("error", "Invalid credentials"));
-                    return;
+                            return;
+                        } else {
+                            httpWorker.Response(exchange, 401, Map.of("error", "Invalid credentials"));
+                            return;
+                        }
+                    }
                 }
+                httpWorker.Response(exchange, 404, Map.of("error", "User not found"));
+                return;
+            } catch (
 
-                httpWorker.Response(exchange, 200, Map.of("message", "Logado com sucesso"));
-            } catch (JsonProcessingException e) {
+            JsonProcessingException e) {
                 httpWorker.Response(exchange, 400, Map.of(
                         "error", "Invalid JSON body",
                         "details", e.getOriginalMessage()));
