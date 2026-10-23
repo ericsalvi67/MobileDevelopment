@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TaskManagER</string>
+
+    <string-array name="requirement_levels">
+        <item>1 - Muito baixa</item>
+        <item>2 - Baixa</item>
+        <item>3 - Média</item>
+        <item>4 - Alta</item>
+    </string-array>
+
+</resources>
