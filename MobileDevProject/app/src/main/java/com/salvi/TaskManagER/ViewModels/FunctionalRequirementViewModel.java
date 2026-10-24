@@ -21,16 +21,16 @@ public class FunctionalRequirementViewModel extends AndroidViewModel {
 
     private final DatabaseHelper databaseHelper;
     private final ExecutorService executor =
-            Executors.newSingleThreadExecutor();
+        Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<FunctionalRequirement>> requirements =
-            new MutableLiveData<>(new ArrayList<>());
+        new MutableLiveData<>(new ArrayList<>());
 
     private final MutableLiveData<Long> operationResult =
-            new MutableLiveData<>();
+        new MutableLiveData<>();
 
     public FunctionalRequirementViewModel(
-            @NonNull Application application
+        @NonNull Application application
     ) {
         super(application);
         databaseHelper = new DatabaseHelper(application);
@@ -49,17 +49,17 @@ public class FunctionalRequirementViewModel extends AndroidViewModel {
             List<FunctionalRequirement> list = new ArrayList<>();
 
             try (Cursor cursor =
-                         databaseHelper.getFunctionalRequirements(reunionId)) {
+                 databaseHelper.getFunctionalRequirements(reunionId)) {
 
                 while (cursor.moveToNext()) {
                     list.add(new FunctionalRequirement(
-                            cursor.getInt(cursor.getColumnIndexOrThrow("id")),
-                            cursor.getInt(cursor.getColumnIndexOrThrow("reunion_id")),
-                            cursor.getString(cursor.getColumnIndexOrThrow("description")),
-                            cursor.getString(cursor.getColumnIndexOrThrow("create_at")),
-                            cursor.getInt(cursor.getColumnIndexOrThrow("importance_level")),
-                            cursor.getInt(cursor.getColumnIndexOrThrow("difficulty")),
-                            cursor.getDouble(cursor.getColumnIndexOrThrow("time_required"))
+                        cursor.getInt(cursor.getColumnIndexOrThrow("id")),
+                        cursor.getInt(cursor.getColumnIndexOrThrow("reunion_id")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("description")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("create_at")),
+                        cursor.getInt(cursor.getColumnIndexOrThrow("importance_level")),
+                        cursor.getInt(cursor.getColumnIndexOrThrow("difficulty")),
+                        cursor.getDouble(cursor.getColumnIndexOrThrow("time_required"))
                     ));
                 }
             }
@@ -69,15 +69,15 @@ public class FunctionalRequirementViewModel extends AndroidViewModel {
     }
 
     public void insertRequirement(
-            int reunionId,
-            String description,
-            int importance,
-            int difficulty,
-            double timeRequired
+        int reunionId,
+        String description,
+        int importance,
+        int difficulty,
+        double timeRequired
     ) {
         executor.execute(() -> {
             long result = databaseHelper.insertFunctionalRequirement(
-                    reunionId, description, importance, difficulty, timeRequired
+                reunionId, description, importance, difficulty, timeRequired
             );
 
             operationResult.postValue(result);
@@ -89,16 +89,16 @@ public class FunctionalRequirementViewModel extends AndroidViewModel {
     }
 
     public void updateRequirement(
-            int id,
-            int reunionId,
-            String description,
-            int importance,
-            int difficulty,
-            double timeRequired
+        int id,
+        int reunionId,
+        String description,
+        int importance,
+        int difficulty,
+        double timeRequired
     ) {
         executor.execute(() -> {
             int result = databaseHelper.updateFunctionalRequirement(
-                    id, description, importance, difficulty, timeRequired
+                id, description, importance, difficulty, timeRequired
             );
 
             operationResult.postValue((long) result);

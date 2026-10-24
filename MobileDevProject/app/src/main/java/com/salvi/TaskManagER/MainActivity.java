@@ -1,4 +1,3 @@
-
 package com.salvi.TaskManagER;
 
 import android.content.Intent;
@@ -31,8 +30,8 @@ public class MainActivity extends AppCompatActivity {
         // cadastro de reunião
         btnRegister.setOnClickListener(v -> {
             Intent intent = new Intent(
-                    MainActivity.this,
-                    RegisterActivity.class
+                MainActivity.this,
+                RegisterActivity.class
             );
             startActivity(intent);
         });
@@ -40,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
         // lista de reuniões
         btnListMeetings.setOnClickListener(v -> {
             Intent intent = new Intent(
-                    MainActivity.this,
-                    ListActivity.class
+                MainActivity.this,
+                ListActivity.class
             );
             startActivity(intent);
         });

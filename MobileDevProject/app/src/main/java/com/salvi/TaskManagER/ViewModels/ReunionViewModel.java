@@ -21,13 +21,13 @@ public class ReunionViewModel extends AndroidViewModel {
 
     private final DatabaseHelper databaseHelper;
     private final ExecutorService executor =
-            Executors.newSingleThreadExecutor();
+        Executors.newSingleThreadExecutor();
 
     private final MutableLiveData<List<Reunion>> reunions =
-            new MutableLiveData<>(new ArrayList<>());
+        new MutableLiveData<>(new ArrayList<>());
 
     private final MutableLiveData<Long> operationResult =
-            new MutableLiveData<>();
+        new MutableLiveData<>();
 
     public ReunionViewModel(@NonNull Application application) {
         super(application);
@@ -49,9 +49,9 @@ public class ReunionViewModel extends AndroidViewModel {
             try (Cursor cursor = databaseHelper.getAllReunions()) {
                 while (cursor.moveToNext()) {
                     list.add(new Reunion(
-                            cursor.getInt(cursor.getColumnIndexOrThrow("id")),
-                            cursor.getString(cursor.getColumnIndexOrThrow("name")),
-                            cursor.getString(cursor.getColumnIndexOrThrow("create_at"))
+                        cursor.getInt(cursor.getColumnIndexOrThrow("id")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("name")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("create_at"))
                     ));
                 }
             }

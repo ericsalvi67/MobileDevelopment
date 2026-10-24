@@ -5,83 +5,112 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     android:padding="16dp">
 
+    <!-- Título -->
     <TextView
-        android:id="@+id/tvListTitle"
+        android:id="@+id/tvReunionsTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Requisitos cadastrados"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:layout_marginTop="12dp"
+        android:text="Reuniões cadastradas"
         android:textColor="?attr/colorOnSurface"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:letterSpacing="-0.02"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Mensagem para lista vazia -->
+    <TextView
+        android:id="@+id/tvEmptyReunions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:padding="24dp"
+        android:gravity="center"
+        android:text="Nenhuma reunião cadastrada."
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tvReunionsTitle"
+        app:layout_constraintBottom_toTopOf="@id/btnReturnReunions"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Reuniões -->
     <HorizontalScrollView
-        android:id="@+id/scrollRequirements"
+        android:id="@+id/scrollReunions"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:fillViewport="true"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="12dp"
+        android:fillViewport="false"
         android:scrollbars="horizontal"
-        app:layout_constraintBottom_toTopOf="@id/btnReturn2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/tvReunionsTitle"
+        app:layout_constraintBottom_toTopOf="@id/btnReturnReunions"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvListTitle"
-        app:layout_constraintVertical_bias="1.0">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <TableLayout
-            android:id="@+id/tableProducts"
+            android:id="@+id/tableReunions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:background="?attr/colorSurfaceContainerLow"
+            android:shrinkColumns="*"
             android:stretchColumns="0">
 
-            <TableRow>
+            <!-- Cabeçalho -->
+            <TableRow
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/colorPrimary"
+                android:gravity="center_vertical">
 
                 <TextView
-                    android:padding="8dp"
-                    android:text="Descrição"
+                    android:layout_width="220dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:padding="12dp"
+                    android:text="Nome da reunião"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:padding="8dp"
-                    android:text="Data"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:padding="8dp"
-                    android:text="Importância"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:padding="8dp"
-                    android:text="Dificuldade"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:padding="8dp"
-                    android:text="Tempo"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:padding="8dp"
+                    android:layout_width="88dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:padding="12dp"
                     android:text="Ações"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:textSize="14sp"
                     android:textStyle="bold" />
+
             </TableRow>
 
         </TableLayout>
+
     </HorizontalScrollView>
 
+    <!-- Voltar -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnReturn2"
+        android:id="@+id/btnReturnReunions"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginEnd="40dp"
+        android:layout_marginBottom="12dp"
+        android:minHeight="52dp"
         android:text="Voltar"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:cornerRadius="14dp"
         app:icon="@android:drawable/ic_media_previous"
+        app:iconGravity="textStart"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

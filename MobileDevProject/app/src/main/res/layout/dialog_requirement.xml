@@ -22,10 +22,40 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Tipo de requisito"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgRequirementType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:checkedButton="@id/rbFunctional">
+
+            <RadioButton
+                android:id="@+id/rbFunctional"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Funcional" />
+
+            <RadioButton
+                android:id="@+id/rbNonFunctional"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Não funcional" />
+
+        </RadioGroup>
+
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tiDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:hint="Descrição do requisito"
             app:counterEnabled="true"
             app:counterMaxLength="1000">
