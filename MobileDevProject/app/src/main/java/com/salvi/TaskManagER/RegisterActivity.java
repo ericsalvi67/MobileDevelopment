@@ -13,6 +13,12 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.app.DatePickerDialog;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,14 +31,18 @@ import com.salvi.TaskManagER.ViewModels.FunctionalRequirementViewModel;
 import com.salvi.TaskManagER.ViewModels.NonFunctionalRequirementViewModel;
 import com.salvi.TaskManagER.ViewModels.ReunionViewModel;
 
-import java.util.Locale;
-
 public class RegisterActivity extends AppCompatActivity {
 
-    private TextView tvReunionName;
+    private EditText tvReunionName;
+    private TextView tvStartDate;
+    private TextView tvEndDate;
     private TableLayout tableRequirements;
+
+    private Calendar startDate;
+    private Calendar endDate;
     private FloatingActionButton fabAdd;
     private MaterialButton btnReturn;
+    private MaterialButton btnSaveReunion;
 
     private ReunionViewModel reunionViewModel;
     private FunctionalRequirementViewModel functionalViewModel;
@@ -41,7 +51,6 @@ public class RegisterActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper;
 
     private Integer currentReunionId = null;
-    private boolean isSavingForRequirement = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,10 +74,14 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void initializeComponents() {
-        tvReunionName = findViewById(R.id.tvReunionName);
+        tvReunionName = findViewById(R.id.etReunionName);
+        tvStartDate = findViewById(R.id.tvStartDate);
+        tvEndDate = findViewById(R.id.tvEndDate);
+
         tableRequirements = findViewById(R.id.tableRequirements);
         fabAdd = findViewById(R.id.fabAddRequirement);
         btnReturn = findViewById(R.id.btnReturn);
+        btnSaveReunion = findViewById(R.id.btnSaveReunion);
     }
 
     private void initializeViewModels() {
@@ -90,20 +103,6 @@ public class RegisterActivity extends AppCompatActivity {
                 currentReunionId = id.intValue();
             }
 
-            if (isSavingForRequirement) {
-                isSavingForRequirement = false;
-
-                loadReunionName();
-                loadRequirements();
-
-                Toast.makeText(
-                    this,
-                    "Reunião cadastrada!",
-                    Toast.LENGTH_SHORT
-                ).show();
-
-                showRequirementDialog();
-            }
         });
 
         functionalViewModel.getRequirements().observe(this, requirements -> {
@@ -120,7 +119,8 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void configureListeners() {
-        tvReunionName.setOnClickListener(v -> showEditReunionNameDialog());
+        tvStartDate.setOnClickListener(v -> showStartDatePicker());
+        tvEndDate.setOnClickListener(v -> showEndDatePicker());
 
         fabAdd.setOnClickListener(v -> {
             if (currentReunionId == null || currentReunionId <= 0) {
@@ -135,61 +135,104 @@ public class RegisterActivity extends AppCompatActivity {
             showRequirementDialog();
         });
 
+        btnSaveReunion.setOnClickListener(v -> saveReunion());
         btnReturn.setOnClickListener(v -> finish());
     }
 
-    private void showEditReunionNameDialog() {
-        EditText input = new EditText(this);
+    private void saveReunion() {
+        String name = tvReunionName.getText().toString().trim();
+        String startDate = tvStartDate.getText().toString().trim();
+        String endDate = tvStartDate.getText().toString().trim();
 
-        input.setText(
-            currentReunionId != null
-                ? tvReunionName.getText().toString()
-                : ""
+        if (name.isEmpty()) {
+            tvReunionName.setError("Informe o nome da reunião.");
+            return;
+        }
+
+        if (startDate.isEmpty()){
+            tvStartDate.setError("Informe uma data inicial");
+            return;
+        }
+
+        if (endDate.isEmpty()){
+            tvEndDate.setError("Informe uma data final");
+            return;
+        }
+
+
+        if (currentReunionId == null) {
+            reunionViewModel.insertReunion(
+                name,
+                startDate.formatted("yyyy-MM-dd"),
+                endDate.formatted("yyyy-MM-dd")
+            );
+            Toast.makeText(this, "Reunião cadastrada.", Toast.LENGTH_SHORT).show();
+        } else {
+            reunionViewModel.updateReunion(
+                currentReunionId,
+                name,
+                startDate.formatted("yyyy-MM-dd"),
+                endDate.formatted("yyyy-MM-dd")
+            );
+            Toast.makeText(this, "Reunião salva.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showStartDatePicker() {
+
+        Calendar initialDate = startDate != null
+                ? (Calendar) startDate.clone()
+                : Calendar.getInstance();
+
+        DatePickerDialog dialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+
+                    startDate = createDate(year, month, dayOfMonth);
+
+                    tvStartDate.setText(formatDate(startDate));
+
+                    // Verifica se a data final continua válida.
+                    if (endDate != null && endDate.before(startDate)) {
+                        endDate = null;
+                        tvEndDate.setText("Data final");
+                    }
+                },
+                initialDate.get(Calendar.YEAR),
+                initialDate.get(Calendar.MONTH),
+                initialDate.get(Calendar.DAY_OF_MONTH)
         );
 
-        input.setHint("Nome da reunião");
-        input.setSingleLine(true);
+        dialog.show();
+    }
 
-        new AlertDialog.Builder(this)
-            .setTitle(
-                currentReunionId == null
-                    ? "Nova reunião"
-                    : "Editar reunião"
-            )
-            .setView(input)
-            .setPositiveButton("Salvar", (dialog, which) -> {
-                String name = input.getText().toString().trim();
+    private void showEndDatePicker() {
 
-                if (name.isEmpty()) {
-                    Toast.makeText(
-                        this,
-                        "Informe o nome da reunião.",
-                        Toast.LENGTH_SHORT
-                    ).show();
-                    return;
-                }
+        Calendar initialDate = endDate != null
+                ? (Calendar) endDate.clone()
+                : startDate != null
+                ? (Calendar) startDate.clone()
+                : Calendar.getInstance();
 
-                if (currentReunionId == null) {
-                    isSavingForRequirement = false;
-                    reunionViewModel.insertReunion(name);
+        DatePickerDialog dialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
 
-                } else {
-                    reunionViewModel.updateReunion(
-                        currentReunionId,
-                        name
-                    );
+                    endDate = createDate(year, month, dayOfMonth);
 
-                    Toast.makeText(
-                        this,
-                        "Solicitação de atualização enviada.",
-                        Toast.LENGTH_SHORT
-                    ).show();
-                }
+                    tvEndDate.setText(formatDate(endDate));
+                },
+                initialDate.get(Calendar.YEAR),
+                initialDate.get(Calendar.MONTH),
+                initialDate.get(Calendar.DAY_OF_MONTH)
+        );
 
-                tvReunionName.setText(name);
-            })
-            .setNegativeButton("Cancelar", null)
-            .show();
+        // Impede selecionar uma data final anterior à data inicial.
+        if (startDate != null) {
+            dialog.getDatePicker().setMinDate(startDate.getTimeInMillis());
+        }
+
+        dialog.show();
     }
 
     private void showRequirementDialog() {
@@ -564,11 +607,19 @@ public class RegisterActivity extends AppCompatActivity {
         if (cursor != null) {
             try {
                 if (cursor.moveToFirst()) {
-                    String reunionName = cursor.getString(
+                    tvReunionName.setText(cursor.getString(
                         cursor.getColumnIndexOrThrow("name")
-                    );
-
-                    tvReunionName.setText(reunionName);
+                    ));
+                    startDate = parseDate(cursor.getString(
+                        cursor.getColumnIndexOrThrow("start_date")
+                    ));
+                    endDate = parseDate(cursor.getString(
+                        cursor.getColumnIndexOrThrow("end_date")
+                    ));
+                    tvStartDate.setText(startDate == null
+                        ? "Data inicial" : formatDate(startDate));
+                    tvEndDate.setText(endDate == null
+                        ? "Data final" : formatDate(endDate));
                 }
             } finally {
                 cursor.close();
@@ -799,6 +850,31 @@ public class RegisterActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private Calendar createDate(int year, int month, int day) {
+        Calendar date = Calendar.getInstance();
+        date.set(year, month, day, 0, 0, 0);
+        date.set(Calendar.MILLISECOND, 0);
+        return date;
+    }
+
+    private String formatDate(Calendar date) {
+        return date == null ? "" : new SimpleDateFormat(
+            "yyyy-MM-dd", Locale.getDefault()
+        ).format(date.getTime());
+    }
+
+    private Calendar parseDate(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        try {
+            Calendar date = Calendar.getInstance();
+            date.setTime(new SimpleDateFormat(
+                "yyyy-MM-dd", Locale.US
+            ).parse(value));
+            return date;
+        } catch (ParseException e) {
+            return null;
+        }
+    }
 
     @Override
     protected void onDestroy() {

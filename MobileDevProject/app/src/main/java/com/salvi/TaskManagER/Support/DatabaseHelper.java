@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "task_manager_db";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
 
     public static final String TABLE_REUNION = "reunion";
     public static final String TABLE_FUNCTIONAL = "funcional_requirement";
@@ -35,6 +35,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             "CREATE TABLE reunion (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "name TEXT NOT NULL, " +
+                "start_date TEXT NOT NULL, " +
+                "end_date TEXT NOT NULL, " +
                 "create_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP" +
                 ")"
         );
@@ -80,19 +82,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int oldVersion,
         int newVersion
     ) {
-        // Adicione aqui migrações quando a estrutura do banco mudar.
-        // Não exclua as tabelas existentes para evitar perda de dados.
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE reunion ADD COLUMN start_date TEXT");
+            db.execSQL("ALTER TABLE reunion ADD COLUMN end_date TEXT");
+        }
     }
 
     // =========================================
     // REUNIÕES
     // =========================================
 
-    public long insertReunion(String name) {
+    public long insertReunion(String name, String startDate, String endDate) {
         SQLiteDatabase db = getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put("name", name.trim());
+        values.put("start_date", startDate);
+        values.put("end_date", endDate);
 
         return db.insert(TABLE_REUNION, null, values);
     }
@@ -102,7 +108,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return db.query(
             TABLE_REUNION,
-            new String[]{"id", "name", "create_at"},
+            new String[]{"id", "name", "start_date", "end_date", "create_at"},
             null,
             null,
             null,
@@ -116,7 +122,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return db.query(
             TABLE_REUNION,
-            new String[]{"id", "name", "create_at"},
+            new String[]{"id", "name", "start_date", "end_date", "create_at"},
             "id = ?",
             new String[]{String.valueOf(id)},
             null,
@@ -125,11 +131,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         );
     }
 
-    public int updateReunion(int id, String name) {
+    public int updateReunion(int id, String name, String startDate, String endDate) {
         SQLiteDatabase db = getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put("name", name.trim());
+        values.put("start_date", startDate);
+        values.put("end_date", endDate);
 
         return db.update(
             TABLE_REUNION,

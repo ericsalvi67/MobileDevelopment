@@ -12,6 +12,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.salvi.TaskManagER.Entities.Reunion;
 import com.salvi.TaskManagER.Support.DatabaseHelper;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -51,6 +52,8 @@ public class ReunionViewModel extends AndroidViewModel {
                     list.add(new Reunion(
                         cursor.getInt(cursor.getColumnIndexOrThrow("id")),
                         cursor.getString(cursor.getColumnIndexOrThrow("name")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("start_date")),
+                        cursor.getString(cursor.getColumnIndexOrThrow("end_date")),
                         cursor.getString(cursor.getColumnIndexOrThrow("create_at"))
                     ));
                 }
@@ -60,9 +63,9 @@ public class ReunionViewModel extends AndroidViewModel {
         });
     }
 
-    public void insertReunion(String name) {
+    public void insertReunion(String name, String startDate, String endDate) {
         executor.execute(() -> {
-            long result = databaseHelper.insertReunion(name);
+            long result = databaseHelper.insertReunion(name, startDate, endDate);
             operationResult.postValue(result);
 
             if (result != -1) {
@@ -71,9 +74,9 @@ public class ReunionViewModel extends AndroidViewModel {
         });
     }
 
-    public void updateReunion(int id, String name) {
+    public void updateReunion(int id, String name, String startDate, String endDate) {
         executor.execute(() -> {
-            int result = databaseHelper.updateReunion(id, name);
+            int result = databaseHelper.updateReunion(id, name, startDate, endDate);
             operationResult.postValue((long) result);
 
             if (result > 0) {
