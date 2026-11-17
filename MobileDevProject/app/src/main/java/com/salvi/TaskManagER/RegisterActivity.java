@@ -1,6 +1,9 @@
 package com.salvi.TaskManagER;
 
 import android.database.Cursor;
+import android.net.Uri;
+import android.graphics.Bitmap;
+import android.widget.ImageView;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -20,6 +23,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -27,6 +32,8 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.salvi.TaskManagER.Support.DatabaseHelper;
+import com.salvi.TaskManagER.Support.Location;
+import com.salvi.TaskManagER.Support.RequirementImages;
 import com.salvi.TaskManagER.ViewModels.FunctionalRequirementViewModel;
 import com.salvi.TaskManagER.ViewModels.NonFunctionalRequirementViewModel;
 import com.salvi.TaskManagER.ViewModels.ReunionViewModel;
@@ -51,6 +58,13 @@ public class RegisterActivity extends AppCompatActivity {
     private DatabaseHelper databaseHelper;
 
     private Integer currentReunionId = null;
+    private ActivityResultLauncher<Uri> cameraLauncher;
+    private String[] draftPhotoPaths = new String[2];
+    private String[] originalPhotoPaths = new String[2];
+    private ImageView[] photoPreviews;
+    private TextView[] photoStatuses;
+    private int pendingPhotoSlot = -1;
+    private String pendingPhotoPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,10 +72,16 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_requirements);
 
         initializeComponents();
+        cameraLauncher = registerForActivityResult(
+            new ActivityResultContracts.TakePicture(),
+            saved -> finishPhotoCapture(saved)
+        );
 
         databaseHelper = new DatabaseHelper(this);
 
         int reunionId = getIntent().getIntExtra("reunion_id", -1);
+
+        initializeViewModels();
 
         if (reunionId != -1) {
             currentReunionId = reunionId;
@@ -69,7 +89,6 @@ public class RegisterActivity extends AppCompatActivity {
             loadRequirements();
         }
 
-        initializeViewModels();
         configureListeners();
     }
 
@@ -77,7 +96,6 @@ public class RegisterActivity extends AppCompatActivity {
         tvReunionName = findViewById(R.id.etReunionName);
         tvStartDate = findViewById(R.id.tvStartDate);
         tvEndDate = findViewById(R.id.tvEndDate);
-
         tableRequirements = findViewById(R.id.tableRequirements);
         fabAdd = findViewById(R.id.fabAddRequirement);
         btnReturn = findViewById(R.id.btnReturn);
@@ -140,42 +158,49 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void saveReunion() {
-        String name = tvReunionName.getText().toString().trim();
-        String startDate = tvStartDate.getText().toString().trim();
-        String endDate = tvStartDate.getText().toString().trim();
+        if (!isReunionFormValid()) return;
 
-        if (name.isEmpty()) {
-            tvReunionName.setError("Informe o nome da reunião.");
-            return;
-        }
-
-        if (startDate.isEmpty()){
-            tvStartDate.setError("Informe uma data inicial");
-            return;
-        }
-
-        if (endDate.isEmpty()){
-            tvEndDate.setError("Informe uma data final");
-            return;
-        }
-
-
-        if (currentReunionId == null) {
-            reunionViewModel.insertReunion(
-                name,
-                startDate.formatted("yyyy-MM-dd"),
-                endDate.formatted("yyyy-MM-dd")
-            );
-            Toast.makeText(this, "Reunião cadastrada.", Toast.LENGTH_SHORT).show();
-        } else {
+        if (currentReunionId != null) {
             reunionViewModel.updateReunion(
                 currentReunionId,
-                name,
-                startDate.formatted("yyyy-MM-dd"),
-                endDate.formatted("yyyy-MM-dd")
+                tvReunionName.getText().toString().trim(),
+                formatDate(startDate),
+                formatDate(endDate)
             );
             Toast.makeText(this, "Reunião salva.", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        reunionViewModel.insertReunion(
+            tvReunionName.getText().toString().trim(),
+            formatDate(startDate),
+            formatDate(endDate)
+        );
+        Toast.makeText(this, "Reunião cadastrada.", Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isReunionFormValid() {
+        if (tvReunionName.getText().toString().trim().isEmpty()) {
+            tvReunionName.setError("Informe o nome da reunião.");
+            return false;
+        }
+        if (startDate == null) {
+            Toast.makeText(this, "Selecione a data inicial.", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        if (endDate == null) {
+            Toast.makeText(this, "Selecione a data final.", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        if (endDate.before(startDate)) {
+            Toast.makeText(
+                this,
+                "A data final deve ser igual ou posterior à inicial.",
+                Toast.LENGTH_SHORT
+            ).show();
+            return false;
+        }
+        return true;
     }
 
     private void showStartDatePicker() {
@@ -329,35 +354,163 @@ public class RegisterActivity extends AppCompatActivity {
                         return;
                     }
 
-                    if (rgType.getCheckedRadioButtonId() == R.id.rbFunctional) {
-                        functionalViewModel.insertRequirement(
-                            currentReunionId,
-                            description,
-                            importance,
-                            difficulty,
-                            time
-                        );
-                    } else {
-                        nonFunctionalViewModel.insertRequirement(
-                            currentReunionId,
-                            description,
-                            importance,
-                            difficulty,
-                            time
-                        );
-                    }
-
-                    Toast.makeText(
-                        this,
-                        "Requisito enviado para cadastro.",
-                        Toast.LENGTH_SHORT
-                    ).show();
-
-                    dialog.dismiss();
+                    boolean functional =
+                        rgType.getCheckedRadioButtonId() == R.id.rbFunctional;
+                    saveRequirementWithLocation(
+                        description, importance, difficulty, time, functional,
+                        dialogView.findViewById(R.id.tvLatitude),
+                        dialogView.findViewById(R.id.tvLongitude),
+                        () -> {
+                            Toast.makeText(this, "Requisito cadastrado.", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                        }
+                    );
                 })
         );
 
+        setupLocationPreview(dialogView, null, null, true);
+        setupPhotoDraft(dialogView, null, null);
+        dialog.setOnCancelListener(ignored -> discardPhotoDraft());
         dialog.show();
+    }
+
+    private void setupLocationPreview(View dialogView, String latitude,
+            String longitude, boolean fetchCurrentLocation) {
+        TextView latitudeView = dialogView.findViewById(R.id.tvLatitude);
+        TextView longitudeView = dialogView.findViewById(R.id.tvLongitude);
+
+        if (!fetchCurrentLocation) {
+            latitudeView.setText("Latitude: " + (latitude == null ? "indisponível" : latitude));
+            longitudeView.setText("Longitude: " + (longitude == null ? "indisponível" : longitude));
+            return;
+        }
+
+        if (!Location.hasPermission(this)) {
+            latitudeView.setText("Latitude: sem permissão");
+            longitudeView.setText("Longitude: sem permissão");
+            return;
+        }
+
+        Location.getCurrentLocation(this, (currentLatitude, currentLongitude) -> {
+            latitudeView.setText("Latitude: "
+                + (currentLatitude == null ? "indisponível" : currentLatitude));
+            longitudeView.setText("Longitude: "
+                + (currentLongitude == null ? "indisponível" : currentLongitude));
+        });
+    }
+
+    private void setupPhotoDraft(View dialogView, String photoOne, String photoTwo) {
+        originalPhotoPaths = new String[]{photoOne, photoTwo};
+        draftPhotoPaths = new String[]{photoOne, photoTwo};
+        photoPreviews = new ImageView[]{
+            dialogView.findViewById(R.id.ivPhotoOne),
+            dialogView.findViewById(R.id.ivPhotoTwo)
+        };
+        photoStatuses = new TextView[]{
+            dialogView.findViewById(R.id.tvPhotoOneStatus),
+            dialogView.findViewById(R.id.tvPhotoTwoStatus)
+        };
+
+        int[] removeButtonIds = {R.id.btnRemovePhotoOne, R.id.btnRemovePhotoTwo};
+        for (int slot = 0; slot < 2; slot++) {
+            final int photoSlot = slot;
+            photoPreviews[slot].setOnClickListener(
+                view -> captureRequirementPhoto(photoSlot)
+            );
+            dialogView.findViewById(removeButtonIds[slot])
+                .setOnClickListener(view -> removePhoto(photoSlot));
+            renderPhoto(slot);
+        }
+    }
+
+    private void removePhoto(int slot) {
+        String draft = draftPhotoPaths[slot];
+        if (draft != null && !draft.equals(originalPhotoPaths[slot])) {
+            RequirementImages.delete(draft);
+        }
+        draftPhotoPaths[slot] = null;
+        renderPhoto(slot);
+    }
+
+    private void captureRequirementPhoto(int slot) {
+        try {
+            pendingPhotoSlot = slot;
+            pendingPhotoPath = RequirementImages.createCapturePath(this);
+            cameraLauncher.launch(RequirementImages.getContentUri(this, pendingPhotoPath));
+        } catch (java.io.IOException exception) {
+            pendingPhotoSlot = -1;
+            Toast.makeText(this, "Não foi possível preparar a câmera.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void finishPhotoCapture(boolean saved) {
+        if (pendingPhotoPath == null || pendingPhotoSlot < 0) return;
+        if (saved) {
+            String previousDraft = draftPhotoPaths[pendingPhotoSlot];
+            if (previousDraft != null
+                    && !previousDraft.equals(originalPhotoPaths[pendingPhotoSlot])) {
+                RequirementImages.delete(previousDraft);
+            }
+            draftPhotoPaths[pendingPhotoSlot] = pendingPhotoPath;
+            renderPhoto(pendingPhotoSlot);
+        } else {
+            RequirementImages.delete(pendingPhotoPath);
+        }
+        pendingPhotoPath = null;
+        pendingPhotoSlot = -1;
+    }
+
+    private void renderPhoto(int slot) {
+        String path = draftPhotoPaths[slot];
+        if (path == null) {
+            photoPreviews[slot].setImageResource(android.R.drawable.ic_menu_camera);
+            photoStatuses[slot].setText("Toque na imagem para fotografar");
+        } else {
+            Bitmap preview = RequirementImages.decodePreview(path);
+            photoPreviews[slot].setImageBitmap(preview);
+            photoStatuses[slot].setText("Foto adicionada");
+        }
+    }
+
+    private void discardPhotoDraft() {
+        for (int slot = 0; slot < 2; slot++) {
+            String draft = draftPhotoPaths[slot];
+            if (draft != null && !draft.equals(originalPhotoPaths[slot])) {
+                RequirementImages.delete(draft);
+            }
+        }
+    }
+
+    private void saveRequirementWithLocation(String description, int importance,
+            int difficulty, double time, boolean functional,
+            TextView latitudeView, TextView longitudeView, Runnable onSaved) {
+        if (!Location.hasPermission(this)) {
+            Toast.makeText(this, "Permita a localização ao abrir o aplicativo.",
+                Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Location.getCurrentLocation(this, (latitude, longitude) -> {
+            if (latitude == null || longitude == null) {
+                Toast.makeText(this, "Não foi possível obter a localização.",
+                    Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            latitudeView.setText("Latitude: " + latitude);
+            longitudeView.setText("Longitude: " + longitude);
+
+            String photoOne = draftPhotoPaths[0];
+            String photoTwo = draftPhotoPaths[1];
+            if (functional) {
+                functionalViewModel.insertRequirement(currentReunionId, description,
+                    importance, difficulty, time, latitude, longitude, photoOne, photoTwo);
+            } else {
+                nonFunctionalViewModel.insertRequirement(currentReunionId, description,
+                    importance, difficulty, time, latitude, longitude, photoOne, photoTwo);
+            }
+            onSaved.run();
+        });
     }
 
     private void loadRequirements() {
@@ -406,6 +559,10 @@ public class RegisterActivity extends AppCompatActivity {
                 double time = cursor.getDouble(
                     cursor.getColumnIndexOrThrow("time_required")
                 );
+                String latitude = cursor.getString(cursor.getColumnIndexOrThrow("latitude"));
+                String longitude = cursor.getString(cursor.getColumnIndexOrThrow("longitude"));
+                String photoOne = cursor.getString(cursor.getColumnIndexOrThrow("photo_one_path"));
+                String photoTwo = cursor.getString(cursor.getColumnIndexOrThrow("photo_two_path"));
 
                 addRequirementRow(
                     id,
@@ -414,7 +571,11 @@ public class RegisterActivity extends AppCompatActivity {
                     importance,
                     difficulty,
                     time,
-                    true
+                    true,
+                    latitude,
+                    longitude,
+                    photoOne,
+                    photoTwo
                 );
             }
         } finally {
@@ -451,6 +612,10 @@ public class RegisterActivity extends AppCompatActivity {
                 double time = cursor.getDouble(
                     cursor.getColumnIndexOrThrow("time_required")
                 );
+                String latitude = cursor.getString(cursor.getColumnIndexOrThrow("latitude"));
+                String longitude = cursor.getString(cursor.getColumnIndexOrThrow("longitude"));
+                String photoOne = cursor.getString(cursor.getColumnIndexOrThrow("photo_one_path"));
+                String photoTwo = cursor.getString(cursor.getColumnIndexOrThrow("photo_two_path"));
 
                 addRequirementRow(
                     id,
@@ -459,7 +624,11 @@ public class RegisterActivity extends AppCompatActivity {
                     importance,
                     difficulty,
                     time,
-                    false
+                    false,
+                    latitude,
+                    longitude,
+                    photoOne,
+                    photoTwo
                 );
             }
         } finally {
@@ -474,7 +643,11 @@ public class RegisterActivity extends AppCompatActivity {
         int importance,
         int difficulty,
         double time,
-        boolean isFunctional
+        boolean isFunctional,
+        String latitude,
+        String longitude,
+        String photoOne,
+        String photoTwo
     ) {
         TableRow row = new TableRow(this);
         row.setPadding(4, 4, 4, 4);
@@ -495,7 +668,11 @@ public class RegisterActivity extends AppCompatActivity {
                 isFunctional,
                 importance,
                 difficulty,
-                time
+                time,
+                latitude,
+                longitude,
+                photoOne,
+                photoTwo
             )
         );
 
@@ -516,7 +693,11 @@ public class RegisterActivity extends AppCompatActivity {
                 isFunctional,
                 importance,
                 difficulty,
-                time
+                time,
+                latitude,
+                longitude,
+                photoOne,
+                photoTwo
             )
         );
 
@@ -528,7 +709,7 @@ public class RegisterActivity extends AppCompatActivity {
         deleteButton.setContentDescription("Excluir requisito");
 
         deleteButton.setOnClickListener(v ->
-            confirmDelete(id, description, isFunctional)
+            confirmDelete(id, description, isFunctional, photoOne, photoTwo)
         );
 
         actions.addView(editButton);
@@ -566,7 +747,9 @@ public class RegisterActivity extends AppCompatActivity {
     private void confirmDelete(
             int id,
             String description,
-            boolean isFunctional
+            boolean isFunctional,
+            String photoOne,
+            String photoTwo
     ) {
         new AlertDialog.Builder(this)
             .setTitle("Excluir requisito")
@@ -587,11 +770,9 @@ public class RegisterActivity extends AppCompatActivity {
                     );
                 }
 
-                Toast.makeText(
-                    this,
-                    "Solicitação de exclusão enviada.",
-                    Toast.LENGTH_SHORT
-                ).show();
+                RequirementImages.delete(photoOne);
+                RequirementImages.delete(photoTwo);
+                Toast.makeText(this, "Requisito excluído.", Toast.LENGTH_SHORT).show();
             })
             .setNegativeButton("Cancelar", null)
             .show();
@@ -634,7 +815,11 @@ public class RegisterActivity extends AppCompatActivity {
         boolean isFunctional,
         int importance,
         int difficulty,
-        double time
+        double time,
+        String latitude,
+        String longitude,
+        String photoOne,
+        String photoTwo
     ) {
         if (currentReunionId == null || currentReunionId <= 0) {
             Toast.makeText(
@@ -757,6 +942,9 @@ public class RegisterActivity extends AppCompatActivity {
 
                 // Se o tipo mudou, exclui da tabela antiga e
                 // cadastra na tabela correspondente ao novo tipo.
+                String newPhotoOne = draftPhotoPaths[0];
+                String newPhotoTwo = draftPhotoPaths[1];
+
                 if (newIsFunctional != isFunctional) {
                     new AlertDialog.Builder(this)
                         .setTitle("Alterar tipo de requisito")
@@ -789,7 +977,11 @@ public class RegisterActivity extends AppCompatActivity {
                                             newDescription,
                                             newImportance,
                                             newDifficulty,
-                                            newTime
+                                            newTime,
+                                            latitude,
+                                            longitude,
+                                            newPhotoOne,
+                                            newPhotoTwo
                                         );
                                 } else {
                                     nonFunctionalViewModel
@@ -798,7 +990,11 @@ public class RegisterActivity extends AppCompatActivity {
                                             newDescription,
                                             newImportance,
                                             newDifficulty,
-                                            newTime
+                                            newTime,
+                                            latitude,
+                                            longitude,
+                                            newPhotoOne,
+                                            newPhotoTwo
                                         );
                                 }
 
@@ -816,7 +1012,7 @@ public class RegisterActivity extends AppCompatActivity {
                     return;
                 }
 
-                // Atualiza o registro existente, preservando seu ID.
+                // Atualiza o registro existente, preservando localização e ID.
                 if (isFunctional) {
                     functionalViewModel.updateRequirement(
                             id,
@@ -824,7 +1020,9 @@ public class RegisterActivity extends AppCompatActivity {
                             newDescription,
                             newImportance,
                             newDifficulty,
-                            newTime
+                            newTime,
+                            newPhotoOne,
+                            newPhotoTwo
                     );
                 } else {
                     nonFunctionalViewModel.updateRequirement(
@@ -833,7 +1031,9 @@ public class RegisterActivity extends AppCompatActivity {
                             newDescription,
                             newImportance,
                             newDifficulty,
-                            newTime
+                            newTime,
+                            newPhotoOne,
+                            newPhotoTwo
                     );
                 }
 
@@ -847,6 +1047,9 @@ public class RegisterActivity extends AppCompatActivity {
             })
         );
 
+        setupLocationPreview(dialogView, latitude, longitude, false);
+        setupPhotoDraft(dialogView, photoOne, photoTwo);
+        dialog.setOnCancelListener(ignored -> discardPhotoDraft());
         dialog.show();
     }
 

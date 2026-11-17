@@ -73,11 +73,23 @@ public class NonFunctionalRequirementViewModel extends AndroidViewModel {
         String description,
         int importance,
         int difficulty,
-        double timeRequired
+        double timeRequired,
+        String latitude,
+        String longitude,
+        String photoOne,
+        String photoTwo
     ) {
         executor.execute(() -> {
             long result = databaseHelper.insertNonFunctionalRequirement(
-                reunionId, description, importance, difficulty, timeRequired
+                reunionId,
+                description,
+                importance,
+                difficulty,
+                timeRequired,
+                latitude,
+                longitude,
+                photoOne,
+                photoTwo
             );
 
             operationResult.postValue(result);
@@ -94,11 +106,19 @@ public class NonFunctionalRequirementViewModel extends AndroidViewModel {
         String description,
         int importance,
         int difficulty,
-        double timeRequired
+        double timeRequired,
+        String photoOne,
+        String photoTwo
     ) {
         executor.execute(() -> {
             int result = databaseHelper.updateNonFunctionalRequirement(
-                id, description, importance, difficulty, timeRequired
+                id,
+                description,
+                importance,
+                difficulty,
+                timeRequired,
+                photoOne,
+                photoTwo
             );
 
             operationResult.postValue((long) result);

@@ -1,24 +1,50 @@
 package com.salvi.TaskManagER;
 
+import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
+import com.salvi.TaskManagER.Support.Location;
 
 public class MainActivity extends AppCompatActivity {
 
     private MaterialButton btnRegister;
     private MaterialButton btnListMeetings;
+    private ActivityResultLauncher<String[]> locationPermissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        locationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            permissions -> {
+                if (!Location.hasPermission(this)) {
+                    Toast.makeText(
+                        this,
+                        "A localização será necessária ao cadastrar requisitos.",
+                        Toast.LENGTH_LONG
+                    ).show();
+                }
+            }
+        );
 
+        setContentView(R.layout.activity_main);
         initializeComponents();
         configureListeners();
+
+        if (!Location.hasPermission(this)) {
+            locationPermissionLauncher.launch(new String[]{
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            });
+        }
     }
 
     private void initializeComponents() {

@@ -22,10 +22,38 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvLatitude"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clickable="false"
+                android:focusable="false"
+                android:paddingEnd="8dp"
+                android:text="Latitude:"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvLongitude"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:clickable="false"
+                android:focusable="false"
+                android:paddingStart="8dp"
+                android:text="Longitude:"
+                android:textSize="12sp" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:text="Tipo de requisito"
             android:textStyle="bold" />
 
@@ -71,31 +99,128 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingEnd="6dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Importância"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spImportance"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:entries="@array/requirement_levels" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingStart="6dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Dificuldade"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spDifficulty"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:entries="@array/requirement_levels" />
+            </LinearLayout>
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Nível de importância"
+            android:text="Fotos (até 2)"
             android:textStyle="bold" />
 
-        <Spinner
-            android:id="@+id/spImportance"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:entries="@array/requirement_levels" />
-
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Dificuldade"
-            android:textStyle="bold" />
+            android:orientation="horizontal">
 
-        <Spinner
-            android:id="@+id/spDifficulty"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:entries="@array/requirement_levels" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingEnd="8dp">
+
+                <ImageView
+                    android:id="@+id/ivPhotoOne"
+                    android:layout_width="match_parent"
+                    android:layout_height="110dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:contentDescription="Toque para tirar a primeira foto"
+                    android:focusable="true"
+                    android:scaleType="centerCrop" />
+
+                <TextView
+                    android:id="@+id/tvPhotoOneStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Sem foto" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRemovePhotoOne"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Remover foto" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingStart="8dp">
+
+                <ImageView
+                    android:id="@+id/ivPhotoTwo"
+                    android:layout_width="match_parent"
+                    android:layout_height="110dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:contentDescription="Toque para tirar a segunda foto"
+                    android:focusable="true"
+                    android:scaleType="centerCrop" />
+
+                <TextView
+                    android:id="@+id/tvPhotoTwoStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Sem foto" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRemovePhotoTwo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Remover foto" />
+            </LinearLayout>
+        </LinearLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tiTimeRequired"

@@ -73,11 +73,23 @@ public class FunctionalRequirementViewModel extends AndroidViewModel {
         String description,
         int importance,
         int difficulty,
-        double timeRequired
+        double timeRequired,
+        String latitude,
+        String longitude,
+        String photoOne,
+        String photoTwo
     ) {
         executor.execute(() -> {
             long result = databaseHelper.insertFunctionalRequirement(
-                reunionId, description, importance, difficulty, timeRequired
+                reunionId,
+                description,
+                importance,
+                difficulty,
+                timeRequired,
+                latitude,
+                longitude,
+                photoOne,
+                photoTwo
             );
 
             operationResult.postValue(result);
@@ -94,11 +106,19 @@ public class FunctionalRequirementViewModel extends AndroidViewModel {
         String description,
         int importance,
         int difficulty,
-        double timeRequired
+        double timeRequired,
+        String photoOne,
+        String photoTwo
     ) {
         executor.execute(() -> {
             int result = databaseHelper.updateFunctionalRequirement(
-                id, description, importance, difficulty, timeRequired
+                id,
+                description,
+                importance,
+                difficulty,
+                timeRequired,
+                photoOne,
+                photoTwo
             );
 
             operationResult.postValue((long) result);
